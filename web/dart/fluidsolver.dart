@@ -1,9 +1,9 @@
+part of Energy2D;
 /*
  *   Copyright (C) 2009  The Concord Consortium, Inc.,
  *   25 Love Lane, Concord, MA 01742
  *
  */
- part of Energy2D;
 
 /**
  * @author Charles Xie
@@ -18,8 +18,8 @@
   double viscosity = 10 * 0.00001568;
   double thermalBuoyancy = 0.00025;
   double gravity = 0.0;
-  double buoyancyApproximation = Model2D.BUOYANCY_AVERAGE_ALL;
-  double gravityType = Model2D.GRAVITY_UNIFORM;
+  var buoyancyApproximation = Model2D.BUOYANCY_AVERAGE_ALL;
+  int gravityType = Model2D.GRAVITY_UNIFORM;
   double timeStep = 0.1;
 
   int nx, ny, nx1, ny1, nx2, ny2;
@@ -66,67 +66,67 @@
     }
   }
 
-  
+
   void setBoundary(MassBoundary boundary) {
     this.boundary = boundary;
   }
 
-  
+
   MassBoundary getBoundary() {
     return boundary;
   }
 
-  
+
   void setGravityType(int gravityType) {
     this.gravityType = gravityType;
   }
 
-  
+
   int getGravityType() {
     return gravityType;
   }
 
-  
+
   void setBuoyancyApproximation(int buoyancyApproximation) {
     this.buoyancyApproximation = buoyancyApproximation;
   }
 
-  
+
   int getBuoyancyApproximation() {
     return buoyancyApproximation;
   }
 
-  
+
   void setThermalBuoyancy(double thermalBuoyancy) {
     this.thermalBuoyancy = thermalBuoyancy;
   }
 
-  
+
   double getThermalBuoyancy() {
     return thermalBuoyancy;
   }
 
-  
+
   void setBackgroundViscosity(double viscosity) {
     this.viscosity = viscosity;
   }
 
-  
+
   double getViscosity() {
     return viscosity;
   }
 
-  
+
   void setTemperature(Matrix<double> t) {
     this.t = t;
   }
 
-  
-  void setFluidity(Matrix<double> fluidity) {
+
+  void setFluidity(Matrix<bool> fluidity) {
     this.fluidity = fluidity;
   }
 
-  
+
   void setGridCellSize(deltaX,deltaY) {
     this.deltaX = deltaX;
     this.deltaY = deltaY;
@@ -136,12 +136,12 @@
     idysq = 1 / (deltaY * deltaY);
   }
 
-  
+
   void setTimeStep(double timeStep) {
     this.timeStep = timeStep;
   }
 
-  
+
   double getTimeStep() {
     return timeStep;
   }
@@ -182,7 +182,7 @@
     }
   }
 */
-  
+
   // ensure dx/dn = 0 at the boundary (the Neumann boundary condition)
   void setObstacleBoundary(Matrix<double> x) {
     for (int i = 1; i < nx1; i++) {
@@ -203,7 +203,7 @@
     }
   }
 
-  
+
   double getMeanTemperature(int i, int j) {
     int lowerBound = 0;
     // search for the upper bound
@@ -213,7 +213,7 @@
         break;
       }
     }
- 
+
     int upperBound = ny;
     for (int k = j + 1; k < ny; k++) {
       if (!fluidity[i][k]) {
@@ -221,7 +221,7 @@
         break;
       }
     }
-   
+
     double t0 = 0.0;
     for (int k = lowerBound; k < upperBound; k++) {
       t0 += t[i][k];
@@ -229,7 +229,7 @@
     return t0 / (upperBound - lowerBound);
   }
 
-  
+
   // Boussinesq approximation: density differences are sufficiently small to be neglected, except where they appear in terms multiplied by g, the acceleration due to gravity.
   void applyBuoyancy(Matrix<double> f) {
     double g = gravity * timeStep;
@@ -246,7 +246,7 @@
         }
       }
       break;
-      
+
     case 'Model2D.BUOYANCY_AVERAGE_COLUMN':
       for (int i = 1; i < nx1; i++) {
         for (int j = 1; j < ny1; j++) {
@@ -260,7 +260,7 @@
     }
   }
 
-  
+
   void diffuse(int b, Matrix<double> f0, Matrix<double> f) {
 
       // Copying a two-dimensional array is very fast: it takes less than 1% compared with the time for the relaxation solver below. Considering this, I chose clarity instead of swapping the arrays.
@@ -282,8 +282,8 @@
     }
   }
 
-  
-  void advect(int b, Matrix<double> f0, Marix<double> f) {
+
+  void advect(int b, Matrix<double> f0, Matrix<double> f) {
     macCormack(b, f0, f);
   }
 
@@ -313,34 +313,6 @@
   }
 
 
-  // Copying a two-dimensional array is very fast. Considering this, I chose clarity instead of swapping the arrays.
-  void solve(Matrix<double> u, Matrix<double> v) {
-    if (thermalBuoyancy != 0) {
-      switch (gravityType) {
-      case 'Model2D.GRAVITY_UNIFORM':
-        applyBuoyancy(v);
-        break;
-      case 'Model2D.GRAVITY_CENTRIC':
-        applySphericalBuoyancy(u, v);
-        break;
-      }
-    }
-    setObstacleVelocity(u, v);
-    if (viscosity > 0) { // viscid
-      diffuse(1, u0, u);
-      diffuse(2, v0, v);
-      conserve(u, v, u0, v0);
-      setObstacleVelocity(u, v);
-    }
-    u.copyFrom(u0);
-    v.copyFrom(v0);
-    advect(1, u0, u);
-    advect(2, v0, v);
-    conserve(u, v, u0, v0);
-    setObstacleVelocity(u, v);
-  }
-  
-
   /*
    * enforce the continuity condition div(V)=0 (velocity field must be divergence-free to conserve mass) using the relaxation method: http://en.wikipedia.org/wiki/Relaxation_method. This procedure solves the Poisson equation.
    */
@@ -350,7 +322,7 @@
       for (int j = 1; j < ny1; j++) {
         if (fluidity[i][j]) {
           div[i][j] = (u[i + 1][j] - u[i - 1][j]) * i2dx + (v[i][j + 1] - v[i][j - 1]) * i2dy;
-          phi[i][j] = 0;
+          phi[i][j] = 0.0;
         }
       }
     }
@@ -383,7 +355,7 @@
     applyBoundary(2, v);
   }
 
-  
+
   Matrix<double> getStreamFunction(Matrix<double> u, Matrix<double> v) {
     if (vorticity == null)
       vorticity = new Matrix<double> (nx, ny, 0.0);
@@ -394,12 +366,16 @@
     return stream;
   }
 
-  
+
   void calculateStreamFunction() {
-    double s = 0.5 / (idxsq + idysq);
+   double s = 0.5 / (idxsq + idysq);
     for (int i = 0; i < nx; i++) {
-      Arrays.fill(stream[i], 0);
-    }
+      for (int j=0; j<ny; j++) {
+             stream[i][j]=0.0;
+       }
+     }
+
+
     for (int k = 0; k < relaxationSteps; k++) {
       for (int i = 1; i < nx1; i++) {
         for (int j = 1; j < ny1; j++) {
@@ -430,17 +406,18 @@
 
   /* b=1 horizontal; b=2 vertical */
   void applyBoundary(int direction, Matrix<double> f) {
+    SimpleMassBoundary b = (SimpleMassBoundary) boundary;
     bool horizontal = direction == 1;
     bool vertical = direction == 2;
     for (int i = 1; i < nx1; i++) {
       // upper side
-      if (vertical && b.getFlowTypeAtBorder(Boundary.UPPER) == MassBoundary.REFLECTIVE) {
+      if (vertical && b.getFlowTypeAtBorder(Boundary.upper) == MassBoundary.REFLECTIVE) {
         f[i][0] = -f[i][1];
       } else {
         f[i][0] = f[i][1];
       }
       // lower side
-      if (vertical && b.getFlowTypeAtBorder(Boundary.LOWER) == MassBoundary.REFLECTIVE) {
+      if (vertical && b.getFlowTypeAtBorder(MassBoundary.LOWER) == MassBoundary.REFLECTIVE) {
         f[i][ny1] = -f[i][ny2];
       } else {
         f[i][ny1] = f[i][ny2];
@@ -448,13 +425,13 @@
     }
     for (int j = 1; j < ny1; j++) {
       // left side
-      if (horizontal && b.getFlowTypeAtBorder(Boundary.LEFT) == MassBoundary.REFLECTIVE) {
+      if (horizontal && b.getFlowTypeAtBorder(MassBoundary.LEFT) == MassBoundary.REFLECTIVE) {
         f[0][j] = -f[1][j];
       } else {
         f[0][j] = f[1][j];
       }
       // right side
-      if (horizontal && b.getFlowTypeAtBorder(Boundary.RIGHT) == MassBoundary.REFLECTIVE) {
+      if (horizontal && b.getFlowTypeAtBorder(MassBoundary.RIGHT) == MassBoundary.REFLECTIVE) {
         f[nx1][j] = -f[nx2][j];
       } else {
         f[nx1][j] = f[nx2][j];
