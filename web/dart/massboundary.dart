@@ -6,19 +6,20 @@ part of Energy2D;
 
 /**
  * @author Charles Xie
- * 
+ *
  */
 
 class MassBoundary {
-  double upper, lower, left, right;
-  int REFLECTIVE = 0;
-  int THROUGH = 1;
-  
-  MassBoundary(this.upper, this.lower, this.left, this.right);
+ double upper, lower, left, right;
+ static int REFLECTIVE = 0;
+ static int THROUGH = 1;
+   MassBoundary(this.upper, this.lower, this.left, this.right);
+
 }
 
 
-class SimpleMassBoundary extends MassBoundary {
-  SimpleMassBoundary() : super(0.0, 0.0, 0.0, 0.0);
-  
+ class SimpleMassBoundary extends MassBoundary {
+
+   SimpleMassBoundary() : super(0.0, 0.0, 0.0, 0.0);
+
 }
