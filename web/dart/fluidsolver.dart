@@ -406,32 +406,32 @@ part of Energy2D;
 
   /* b=1 horizontal; b=2 vertical */
   void applyBoundary(int direction, Matrix<double> f) {
-    SimpleMassBoundary b = (SimpleMassBoundary) boundary;
+
     bool horizontal = direction == 1;
     bool vertical = direction == 2;
     for (int i = 1; i < nx1; i++) {
-      // upper side
-      if (vertical && b.getFlowTypeAtBorder(Boundary.upper) == MassBoundary.REFLECTIVE) {
+      // upper side; value of 0 denotes refelective surface
+      if (vertical && boundary.upper == MassBoundary.REFLECTIVE) {
         f[i][0] = -f[i][1];
       } else {
         f[i][0] = f[i][1];
       }
-      // lower side
-      if (vertical && b.getFlowTypeAtBorder(MassBoundary.LOWER) == MassBoundary.REFLECTIVE) {
+      // lower side; value of 0 denotes refelective surface
+      if (vertical && boundary.lower == MassBoundary.REFLECTIVE) {
         f[i][ny1] = -f[i][ny2];
       } else {
         f[i][ny1] = f[i][ny2];
       }
     }
     for (int j = 1; j < ny1; j++) {
-      // left side
-      if (horizontal && b.getFlowTypeAtBorder(MassBoundary.LEFT) == MassBoundary.REFLECTIVE) {
+      // left side; value of 0 denotes refelective surface
+      if (horizontal && boundary.left == MassBoundary.REFLECTIVE) {
         f[0][j] = -f[1][j];
       } else {
         f[0][j] = f[1][j];
       }
-      // right side
-      if (horizontal && b.getFlowTypeAtBorder(MassBoundary.RIGHT) == MassBoundary.REFLECTIVE) {
+      // right side; value of 0 denotes refelective surface
+      if (horizontal && boundary.right == MassBoundary.REFLECTIVE) {
         f[nx1][j] = -f[nx2][j];
       } else {
         f[nx1][j] = f[nx2][j];
