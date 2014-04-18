@@ -18,7 +18,7 @@ part of Energy2D;
   double viscosity = 10 * 0.00001568;
   double thermalBuoyancy = 0.00025;
   double gravity = 0.0;
-  var buoyancyApproximation = Model2D.BUOYANCY_AVERAGE_ALL;
+  int buoyancyApproximation = Model2D.BUOYANCY_AVERAGE_ALL;
   int gravityType = Model2D.GRAVITY_UNIFORM;
   double timeStep = 0.1;
 
