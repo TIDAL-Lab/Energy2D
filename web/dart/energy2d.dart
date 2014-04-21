@@ -22,17 +22,50 @@ const double AIR_DENSITY = 1.204;
  */
 const double AIR_VISCOSITY = 0.00001568;
 
+CanvasRenderingContext2D ctx;
+
+Model2D model;
+
+int width = 100;
+int height = 100;
+
+
 void main() {
-  querySelector("#sample_text_id")
-      ..text = "Click me!"
-      ..onClick.listen(reverseText);
+  
+  model = new Model2D(100, 100);
+  
+  CanvasElement canvas = querySelector("#world");
+  width = canvas.width;
+  height = canvas.height;
+  ctx = canvas.getContext('2d');
+  canvas.onClick.listen(step);
 }
 
-void reverseText(MouseEvent event) {
-  var text = querySelector("#sample_text_id").text;
-  var buffer = new StringBuffer();
-  for (int i = text.length - 1; i >= 0; i--) {
-    buffer.write(text[i]);
+
+void draw() {
+  Matrix<double> t = model.t;
+  
+  double cw = width / model.nx;
+  double ch = height / model.ny;
+  
+  // min -30 C
+  // max 50 C
+  
+  double minT = -30.0;
+  double maxT = 50.0;
+  
+  for (int i=0; i<t.cols; i++) {
+    for (int j=0; j<t.rows; j++) {
+      double temp = t[i][j];
+      int r = max(min(255, (((temp - minT) / (maxT - minT)) * 255).round()), 0);
+      ctx.fillStyle = 'rgb($r, 100, 100)';
+      ctx.fillRect(i * cw, j * ch, cw, ch);
+    }
   }
-  querySelector("#sample_text_id").text = buffer.toString();
+}
+
+
+void step(MouseEvent event) {
+  model.nextStep();
+  draw();
 }

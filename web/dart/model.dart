@@ -20,7 +20,7 @@ class Model2D {
   static const int GRAVITY_UNIFORM = 0;
   static const int GRAVITY_CENTRIC = 1;
 
-  int indexOfStep;
+  int indexOfStep = 0;
 
   //10 * Constants.AIR_THERMAL_CONDUCTIVITY
   double backgroundConductivity = 0.25;
@@ -31,7 +31,7 @@ class Model2D {
   // Constants.AIR_DENSITY
   double backgroundDensity = 1.204;
   
-  double backgroundTemperature;
+  double backgroundTemperature = 25.0;
   
   double maximumHeatCapacity = -1.00;
 
@@ -86,25 +86,25 @@ class Model2D {
 
 
   // number of grid cells 
-  static int nx = 100;
-  static int ny = 100;
+  int nx = 100;
+  int ny = 100;
 
   // grid length in x direction (unit: meter)
-  static double lx = 10.0;
+  double lx = 10.0;
 
   // grid slength in y direction (unit: meter)
-  static double ly = 10.0;
+  double ly = 10.0;
 
   // cell size in x and y
-  double deltaX = lx / nx;
-  double deltaY = ly / ny;
+  double deltaX = 0.1;
+  double deltaY = 0.1;
 
   bool running;
   bool notifyReset;
 
   // optimization flags
   bool hasPartPower;
-  bool radiative;
+  bool radiative = false;
 
   // condition flags
   bool convective = true;
@@ -122,12 +122,12 @@ class Model2D {
     t = new Matrix<double> (nx, ny);
     u = new Matrix<double> (nx, ny, 0.0);
     v = new Matrix<double> (nx, ny, 0.0);
-    tb = new Matrix<double> (nx, ny);
+    tb = new Matrix<double> (nx, ny, 0.0);
     q = new Matrix<double> (nx, ny);
-    conductivity = new Matrix<double> (nx, ny);
-    specificHeat = new Matrix<double> (nx, ny);
-    density = new Matrix<double> (nx, ny);
-    fluidity = new Matrix<bool> (nx, ny);
+    conductivity = new Matrix<double> (nx, ny, backgroundConductivity);
+    specificHeat = new Matrix<double> (nx, ny, backgroundSpecificHeat);
+    density = new Matrix<double> (nx, ny, backgroundDensity);
+    fluidity = new Matrix<bool> (nx, ny, false);
 
     /*
     parts = part.add(new Part());
@@ -154,13 +154,14 @@ class Model2D {
     fluidSolver = new FluidSolver2D(nx, ny);
     fluidSolver.setFluidity(fluidity);
     fluidSolver.setTemperature(t);
-
+  
     /*
     raySolver = new RaySolver2D(lx, ly);
     raySolver.setPower(q);
-
+    */
     setGridCellSize();
-
+    
+    /*
     propertyChangeListeners = new List<PropertyChangeListener>();
     manipulationListeners   = new List<ManipulationListener>();
     */
@@ -193,7 +194,7 @@ class Model2D {
   }
 
   
-  public void setInitialTemperature() {
+  void setInitialTemperature() {
     t.fill(backgroundTemperature);
     /*
     if (parts == null || parts.isEmpty()) {
@@ -246,7 +247,7 @@ class Model2D {
     clouds.clear();
     trees.clear();
     */
-    maximumHeatCapacity = -1;
+    maximumHeatCapacity = -1.0;
   }
 
   
@@ -413,13 +414,15 @@ class Model2D {
   public List<Tree> getTrees() {
     return trees;
   }
+  */
   
   void setGridCellSize() {
     heatSolver.setGridCellSize(deltaX, deltaY);
     fluidSolver.setGridCellSize(deltaX, deltaY);
-    raySolver.setGridCellSize(deltaX, deltaY);
+    //raySolver.setGridCellSize(deltaX, deltaY);
   }
 
+  /*
   public void setLx(float lx) {
     this.lx = lx;
     deltaX = lx / nx;
@@ -1150,15 +1153,16 @@ class Model2D {
     }
     return energy * deltaX * deltaY;
   }
+  */
 
   
   /** get the thermal energy stored in the cell at the given point. If the point is out of bound, return -1
    * (any impossible value to indicate error) */
   double getThermalEnergyAt(double x, double y) {
-    int i = Math.round(x / deltaX);
-    if (i < 0 || i >= nx) return -1;
-    int j = Math.round(y / deltaY);
-    if (j < 0 || j >= ny) return -1;
+    int i = (x / deltaX).round();
+    if (i < 0 || i >= nx) return -1.0;
+    int j = (y / deltaY).round();
+    if (j < 0 || j >= ny) return -1.0;
     return t[i][j] * density[i][j] * specificHeat[i][j] * deltaX * deltaY;
   }
 
@@ -1253,7 +1257,9 @@ class Model2D {
   */
 
   
-  private void nextStep() {
+  void nextStep() {
+    /*
+    // ray solver
     if (radiative) {
       if (indexOfStep % photonEmissionInterval == 0) {
         refreshPowerArray();
@@ -1263,14 +1269,23 @@ class Model2D {
       }
       raySolver.solve(this);
     }
-    if (convective)
+    */
+    
+    if (convective) {
+      print('solving fluids');
       fluidSolver.solve(u, v);
-    heatSolver.solve(convective, t);
-    if (!clouds.isEmpty()) {
-      synchronized (clouds) {
-        for (Cloud c : clouds)
-          c.move(heatSolver.getTimeStep(), lx);
+      print('solving heat');
+      heatSolver.solve(convective, t);
+      print('done');
+      /*
+      if (!clouds.isEmpty()) {
+        synchronized (clouds) {
+          for (Cloud c : clouds)
+            c.move(heatSolver.getTimeStep(), lx);
+          }
+        }
       }
+      */
     }
     indexOfStep++;
   }
@@ -1298,9 +1313,9 @@ class Model2D {
 
 
   double getTemperatureAt(double x, double y) {
-    int i = min(t.length - 1, round(x / deltaX));
+    int i = min(t.cols - 1, (x / deltaX).round());
     if (i < 0) i = 0;
-    int j = min(t[0].length - 1, round(y / deltaY));
+    int j = min(t.rows - 1, (y / deltaY).round());
     if (j < 0) j = 0;
     return t[i][j];
   }

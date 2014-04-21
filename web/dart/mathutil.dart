@@ -68,9 +68,9 @@ class MathUtil {
   
   static double getAverage(Matrix<double> array) {
     double ave = 0.0;
-    for (List<double> a in array) {
-      for (double x in a) {
-        ave += x;
+    for (int i=0; i<array.cols; i++) {
+      for (int j=0; j<array.rows; j++) {
+        ave += array[i][j];
       }
     }
     return ave / array.size;

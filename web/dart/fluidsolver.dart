@@ -127,7 +127,7 @@ part of Energy2D;
   }
 
 
-  void setGridCellSize(deltaX,deltaY) {
+  void setGridCellSize(double deltaX, double deltaY) {
     this.deltaX = deltaX;
     this.deltaY = deltaY;
     i2dx = 0.5 / deltaX;
@@ -145,10 +145,12 @@ part of Energy2D;
   double getTimeStep() {
     return timeStep;
   }
-/*
+
+
   void setObstacleVelocity(Matrix<double> u, Matrix<double> v) {
     int count = 0;
     double uw, vw;
+        /*
     for (int i = 1; i < nx1; i++) {
       for (int j = 1; j < ny1; j++) {
         if (!fluidity[i][j]) {
@@ -180,8 +182,9 @@ part of Energy2D;
         }
       }
     }
+        */
   }
-*/
+
 
   // ensure dx/dn = 0 at the boundary (the Neumann boundary condition)
   void setObstacleBoundary(Matrix<double> x) {
@@ -312,6 +315,35 @@ part of Energy2D;
     applyBoundary(b, f);
   }
 
+  
+	void solve(Matrix<double> u, Matrix<double> v) {
+    if (thermalBuoyancy != 0) {
+      //switch (gravityType) {
+      //  case Model2D.GRAVITY_UNIFORM:
+          applyBuoyancy(v);
+      //    break;
+      //  case Model2D.GRAVITY_CENTRIC:
+      //    applySphericalBuoyancy(u, v);
+      //    break;
+      //}
+    }
+    setObstacleVelocity(u, v);
+    if (viscosity > 0) { // viscid
+      diffuse(1, u0, u);
+      diffuse(2, v0, v);
+      conserve(u, v, u0, v0);
+      setObstacleVelocity(u, v);
+    }
+    
+    u.copyFrom(u0);
+    v.copyFrom(v0);
+        
+    advect(1, u0, u);
+    advect(2, v0, v);
+    conserve(u, v, u0, v0);
+    setObstacleVelocity(u, v);
+  }  
+  
 
   /*
    * enforce the continuity condition div(V)=0 (velocity field must be divergence-free to conserve mass) using the relaxation method: http://en.wikipedia.org/wiki/Relaxation_method. This procedure solves the Poisson equation.
