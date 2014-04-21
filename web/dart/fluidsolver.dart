@@ -11,10 +11,10 @@ part of Energy2D;
  */
  class FluidSolver2D {
 
- // five relaxation steps are probably enough for most transient problems because there are numerous previous steps that can be considered as pre-relaxation steps, especially when changes are slow or small.
+  // five relaxation steps are probably enough for most transient problems because there are numerous previous steps that can be considered as pre-relaxation steps, especially when changes are slow or small.
   int relaxationSteps = 5;
 
- // 10 * Constants.AIR_VISCOSITY;
+  // 10 * Constants.AIR_VISCOSITY;
   double viscosity = 10 * 0.00001568;
   double thermalBuoyancy = 0.00025;
   double gravity = 0.0;
@@ -236,7 +236,7 @@ part of Energy2D;
     double b = thermalBuoyancy * timeStep;
     double t0;
     switch (buoyancyApproximation) {
-    case 'Model2D.BUOYANCY_AVERAGE_ALL':
+    case Model2D.BUOYANCY_AVERAGE_ALL:
       t0 = MathUtil.getAverage(t);
       for (int i = 1; i < nx1; i++) {
         for (int j = 1; j < ny1; j++) {
@@ -247,7 +247,7 @@ part of Energy2D;
       }
       break;
 
-    case 'Model2D.BUOYANCY_AVERAGE_COLUMN':
+    case Model2D.BUOYANCY_AVERAGE_COLUMN:
       for (int i = 1; i < nx1; i++) {
         for (int j = 1; j < ny1; j++) {
           if (fluidity[i][j]) {

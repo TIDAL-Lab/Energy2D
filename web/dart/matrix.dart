@@ -23,6 +23,9 @@ class Matrix<T> {
   }
   
   
+  int get size => rows * cols;
+  
+  
   void copyFrom(Matrix<T> source) {
     if (source.rows == rows && source.cols == cols) {
       for (int i=0; i<rows; i++) {

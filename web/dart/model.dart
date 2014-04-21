@@ -13,12 +13,12 @@ part of Energy2D;
  * @author Charles Xie
  *
  */
- class Model2D {
+class Model2D {
 
- static int BUOYANCY_AVERAGE_ALL = 0;
- static int BUOYANCY_AVERAGE_COLUMN = 1;
- static int GRAVITY_UNIFORM = 0;
- static int GRAVITY_CENTRIC = 1;
+  static const int BUOYANCY_AVERAGE_ALL = 0;
+  static const int BUOYANCY_AVERAGE_COLUMN = 1;
+  static const int GRAVITY_UNIFORM = 0;
+  static const int GRAVITY_CENTRIC = 1;
 
   int indexOfStep;
 

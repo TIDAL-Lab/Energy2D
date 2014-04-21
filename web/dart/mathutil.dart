@@ -17,9 +17,9 @@ class MathUtil {
    static bool between(double a, double b, double x) {
     return x < max(a, b) && x > min(a, b);
   }
-/*
 
-   static double getMax(List<double> array) {
+/*  
+  static double getMax(List<double> array) {
     double max = -double.MAX_FINITE;
     for (double x in array) {
       if (x > max)
@@ -28,6 +28,7 @@ class MathUtil {
     return max;
   }
 
+  
   static double getMin(List<double> array) {
     double min = double.MAX_FINITE;
     for (double x in array) {
@@ -36,29 +37,35 @@ class MathUtil {
     }
     return min;
   }
+*/
 
-  static double getMax(Matrix<double> array) {
+
+  static double getMax(Matrix<double> m) {
     double max = -double.MAX_FINITE;
-    for (List<double> a in array) {
-      for (double x in a) {
-        if (x > max)
-          max = x;
+    for (int i=0; i<m.rows; i++) {
+      for (int j=0; j<m.cols; j++) {
+        if (m[i][j] > max) {
+          max = m[i][j];
+        }
       }
     }
     return max;
   }
 
-  static double getMin(Matrix<double> array) {
-    double min = -double.MAX_FINITE;
-    for (List<double> a in array) {
-      for (double x in a) {
-        if (x < min)
-          min = x;
+  
+  static double getMin(Matrix<double> m) {
+    double min = double.MAX_FINITE;
+    for (int i=0; i<m.rows; i++) {
+      for (int j=0; j<m.cols; j++) {
+        if (m[i][j] < min) {
+          min = m[i][j];
+        }
       }
     }
     return min;
   }
-*/
+
+  
   static double getAverage(Matrix<double> array) {
     double ave = 0.0;
     for (List<double> a in array) {
@@ -66,8 +73,7 @@ class MathUtil {
         ave += x;
       }
     }
-    return ave / (array.length * array[0].length);
+    return ave / array.size;
   }
-
 }
 

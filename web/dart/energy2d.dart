@@ -5,7 +5,9 @@ import 'dart:math';
 
 part 'fluidsolver.dart';
 part 'heatsolver.dart';
+part 'mathutil.dart';
 part 'matrix.dart';
+part 'model.dart';
 part 'thermalboundary.dart';
 part 'massboundary.dart';
 
