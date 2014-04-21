@@ -18,6 +18,15 @@ class Matrix<T> {
   }
   
   
+  void fill(T value) {
+    for (int i=0; i<rows; i++) {
+      for (int j=0; j<cols; j++) {
+        matrix[i][j] = value;
+      }
+    }
+  }
+  
+  
   List<T> operator[](int i) {
     return matrix[i];
   }

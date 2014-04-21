@@ -24,11 +24,15 @@ class Model2D {
 
   //10 * Constants.AIR_THERMAL_CONDUCTIVITY
   double backgroundConductivity = 0.25;
+  
   //Constants.AIR_SPECIFIC_HEAT
   double backgroundSpecificHeat = 1012.0;
+  
   // Constants.AIR_DENSITY
   double backgroundDensity = 1.204;
+  
   double backgroundTemperature;
+  
   double maximumHeatCapacity = -1.00;
 
   // temperature array
@@ -80,16 +84,18 @@ class Model2D {
   int photonEmissionInterval = 20;
   */
 
- static int nx = 100;
- static int ny = 100;
 
-  // length in x direction (unit: meter)
+  // number of grid cells 
+  static int nx = 100;
+  static int ny = 100;
+
+  // grid length in x direction (unit: meter)
   static double lx = 10.0;
 
-  // length in y direction (unit: meter)
+  // grid slength in y direction (unit: meter)
   static double ly = 10.0;
 
-
+  // cell size in x and y
   double deltaX = lx / nx;
   double deltaY = ly / ny;
 
@@ -109,13 +115,15 @@ class Model2D {
   Runnable tasks;
  */
 
-  Model2D() {
+  Model2D(this.nx, this.ny) {
 
+    deltaX = lx / nx;
+    deltaY = ly / ny;
     t = new Matrix<double> (nx, ny);
-    u = new Matrix<double> (nx, ny);
-    v = new Matrix<double> (nx, ny);
-    q = new Matrix<double> (nx, ny);
+    u = new Matrix<double> (nx, ny, 0.0);
+    v = new Matrix<double> (nx, ny, 0.0);
     tb = new Matrix<double> (nx, ny);
+    q = new Matrix<double> (nx, ny);
     conductivity = new Matrix<double> (nx, ny);
     specificHeat = new Matrix<double> (nx, ny);
     density = new Matrix<double> (nx, ny);
@@ -130,9 +138,10 @@ class Model2D {
     photons = Collections.synchronizedList(new ArrayList<Photon>());
     clouds = Collections.synchronizedList(new ArrayList<Cloud>());
     trees = Collections.synchronizedList(new ArrayList<Tree>());
-
-    init();
     */
+    
+    init();
+
     heatSolver = new HeatSolver2D(nx, ny);
     heatSolver.setSpecificHeat(specificHeat);
     heatSolver.setConductivity(conductivity);
@@ -156,26 +165,98 @@ class Model2D {
     manipulationListeners   = new List<ManipulationListener>();
     */
   }
-
-  int getNx() {
-    return nx;
+  
+  
+  void init() {
+    conductivity.fill(backgroundConductivity);
+    specificHeat.fill(backgroundSpecificHeat);
+    density.fill(backgroundDensity);
+    setInitialTemperature();
   }
 
-  int getNy() {
-    return ny;
+  
+  void setInitialVelocity() {
+    u.fill(0.0);
+    v.fill(0.0);
+    /*
+    for (int i = 0; i < nx; i++) {
+      for (int j = 0; j < ny; j++) {
+        if (fluidity[i][j]) {
+          u[i][j] = v[i][j] = 0.0;
+        } else {
+          u[i][j] = uWind[i][j];
+          v[i][j] = vWind[i][j];
+        }
+      }
+    }
+    */
   }
+
+  
+  public void setInitialTemperature() {
+    t.fill(backgroundTemperature);
+    /*
+    if (parts == null || parts.isEmpty()) {
+      for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+          t[i][j] = backgroundTemperature;
+        }
+      }
+    }
+    else {
+      float x, y;
+      int count;
+      for (int i = 0; i < nx; i++) {
+        x = i * deltaX;
+        for (int j = 0; j < ny; j++) {
+          y = j * deltaY;
+          count = 0;
+          t[i][j] = 0;
+          synchronized (parts) {
+            for (Part p : parts) { // a cell gets the average temperature from the overlapping parts
+              if (p.getShape().contains(x, y)) {
+                count++;
+                t[i][j] += p.getTemperature();
+              }
+            }
+          }
+          if (count > 0) {
+            t[i][j] /= count;
+          } else {
+            t[i][j] = backgroundTemperature;
+          }
+        }
+      }
+    }
+    
+    clearSensorData();
+    */
+  }
+  
+  
+  
+  void clear() {
+    /*
+    parts.clear();
+    photons.clear();
+    anemometers.clear();
+    thermometers.clear();
+    heatFluxSensors.clear();
+    thermostats.clear();
+    clouds.clear();
+    trees.clear();
+    */
+    maximumHeatCapacity = -1;
+  }
+
+  
+
 /*
   void setTasks(Runnable r) {
     tasks = r;
   }
 */
-  void setConvective(bool convective) {
-    this.convective = convective;
-  }
 
-  bool isConvective() {
-    return convective;
-  }
 
   /**
    * Imagine that the 2D plane is thermally coupled with a thin layer that has the background temperature
@@ -184,19 +265,21 @@ class Model2D {
     heatSolver.zHeatDiffusivity = zHeatDiffusivity;
   }
 
-   double getZHeatDiffusivity() {
+  double getZHeatDiffusivity() {
     return heatSolver.zHeatDiffusivity;
   }
 
-   void setGravityType(int gravityType) {
+
+  void setGravityType(int gravityType) {
     fluidSolver.setGravityType(gravityType);
   }
 
-   int getGravityType() {
+  int getGravityType() {
     return fluidSolver.getGravityType();
   }
 
-   void setThermalBuoyancy(double thermalBuoyancy) {
+  
+  void setThermalBuoyancy(double thermalBuoyancy) {
     fluidSolver.setThermalBuoyancy(thermalBuoyancy);
   }
 
@@ -204,6 +287,7 @@ class Model2D {
     return fluidSolver.getThermalBuoyancy();
   }
 
+  
   void setBuoyancyApproximation(int buoyancyApproximation) {
     fluidSolver.setBuoyancyApproximation(buoyancyApproximation);
   }
@@ -212,6 +296,7 @@ class Model2D {
     return fluidSolver.getBuoyancyApproximation();
   }
 
+  
   void setBackgroundViscosity(double viscosity) {
     fluidSolver.setBackgroundViscosity(viscosity);
   }
@@ -220,7 +305,9 @@ class Model2D {
     return fluidSolver.getViscosity();
   }
 
-  /*void setSunny(bool sunny) {
+  
+  /*
+  void setSunny(bool sunny) {
     this.sunny = sunny;
     if (sunny) {
       radiative = true;
@@ -233,7 +320,7 @@ class Model2D {
     return sunny;
   }
 
-  /** synchronize the sun's angle with the clock, assuming sunrise at 6:00 and sunset at 18:00. */
+  // synchronize the sun's angle with the clock, assuming sunrise at 6:00 and sunset at 18:00. 
   public void moveSun(float sunrise, float sunset) {
     float hour = getTime() / 3600f;
     int i = (int) hour;
@@ -326,8 +413,8 @@ class Model2D {
   public List<Tree> getTrees() {
     return trees;
   }
-
-  private void setGridCellSize() {
+  
+  void setGridCellSize() {
     heatSolver.setGridCellSize(deltaX, deltaY);
     fluidSolver.setGridCellSize(deltaX, deltaY);
     raySolver.setGridCellSize(deltaX, deltaY);
@@ -353,8 +440,10 @@ class Model2D {
 
   public float getLy() {
     return ly;
-  }*/
+  }
+  */
 
+  
   /*
   void translateAllBy(double dx, double dy) {
     if (!thermometers.isEmpty())
@@ -397,7 +486,7 @@ class Model2D {
         if (!bound.intersects(h.getShape().getBounds2D()))
           out = true;
       }
-    /*
+
     if (!clouds.isEmpty())
       for (Cloud c in clouds) {
         c.setLocation(scale * c.getX(), ly - scale * (ly - c.getY()));
@@ -412,7 +501,7 @@ class Model2D {
         if (!bound.intersects(t.getShape().getBounds2D()))
           out = true;
       }
-      */
+
     for (Part p in parts) {
       Shape s = p.getShape();
       if (s is Rectangle2D.Float) {
@@ -456,6 +545,7 @@ class Model2D {
   }
   */
 
+  
   ThermalBoundary getThermalBoundary() {
     return heatSolver.getBoundary();
   }
@@ -464,7 +554,8 @@ class Model2D {
     heatSolver.setBoundary(b);
   }
 
-   MassBoundary getMassBoundary() {
+  
+  MassBoundary getMassBoundary() {
     return fluidSolver.getBoundary();
   }
 
@@ -472,49 +563,26 @@ class Model2D {
     fluidSolver.setBoundary(b);
   }
 
-   void setBackgroundTemperature(double backgroundTemperature) {
+  
+  void setBackgroundTemperature(double backgroundTemperature) {
     this.backgroundTemperature = backgroundTemperature;
     heatSolver.backgroundTemperature = backgroundTemperature;
   }
 
-   double getBackgroundTemperature() {
+  double getBackgroundTemperature() {
     return backgroundTemperature;
   }
 
-  void setBackgroundConductivity(double backgroundConductivity) {
-    this.backgroundConductivity = backgroundConductivity;
-  }
-
-  double getBackgroundConductivity() {
-    return backgroundConductivity;
-  }
-
-   void setBackgroundSpecificHeat(double backgroundSpecificHeat) {
-    this.backgroundSpecificHeat = backgroundSpecificHeat;
-  }
-
-   double getBackgroundSpecificHeat() {
-    return backgroundSpecificHeat;
-  }
-
-   void setBackgroundDensity(double backgroundDensity) {
-    this.backgroundDensity = backgroundDensity;
-  }
-
-   double getBackgroundDensity() {
-    return backgroundDensity;
-  }
-
+  
   /** return the Prandtl Number of the background fluid */
-
-   double getPrandtlNumber() {
+  double getPrandtlNumber() {
     return getBackgroundViscosity() * backgroundDensity * backgroundSpecificHeat / backgroundConductivity;
   }
 
   /* thermostats
 
-  /** only one thermostat is needed for a power source or to connect a thermometer and a power source */
-   Thermostat addThermostat(Thermometer t, Part p) {
+  // only one thermostat is needed for a power source or to connect a thermometer and a power source 
+  Thermostat addThermostat(Thermometer t, Part p) {
     Iterator<Thermostat> i = thermostats.iterator();
     synchronized (thermostats) {
       while (i.hasNext()) {
@@ -528,7 +596,7 @@ class Model2D {
     return x;
   }
 
-   void removeThermostat(Thermometer t, Part p) {
+  void removeThermostat(Thermometer t, Part p) {
     if (thermostats.isEmpty())
       return;
     synchronized (thermostats) {
@@ -540,7 +608,7 @@ class Model2D {
     }
   }
 
-   bool isConnected(Thermometer t, Part p) {
+  bool isConnected(Thermometer t, Part p) {
     Iterator<Thermostat> i = thermostats.iterator();
     synchronized (thermostats) {
       while (i.hasNext()) {
@@ -552,7 +620,8 @@ class Model2D {
     return false;
   }
 
-   Thermostat getThermostat(Object o) {
+  
+  Thermostat getThermostat(Object o) {
     Iterator<Thermostat> i = thermostats.iterator();
     synchronized (thermostats) {
       while (i.hasNext()) {
@@ -720,7 +789,7 @@ class Model2D {
     return heatFluxSensors.get(i);
   }
 
-  /** Since the sensor data are erased, the index of step (and hence the clock) is also reset. */
+  // Since the sensor data are erased, the index of step (and hence the clock) is also reset. 
    void clearSensorData() {
     Matrix<double> bounds;
     indexOfStep = 0;
@@ -881,7 +950,7 @@ class Model2D {
     return null;
   }
 
-  /** Every manipulable has a UID. To avoid confusion, two objects of different types cannot have the same UID. */
+  // Every manipulable has a UID. To avoid confusion, two objects of different types cannot have the same UID.
   bool isUidUsed(String uid) {
     if (uid == null || uid.trim().equals(""))
       throw new IllegalArgumentException("UID cannot be null or an empty string.");
@@ -945,12 +1014,11 @@ class Model2D {
     checkPartPower();
     checkPartRadiation();
   }
+  */
 
-  double getMaximumHeatCapacity() {
-    return maximumHeatCapacity;
-  }
 
-  /** the part on the top sets the properties of a cell */
+  // the part on the top sets the properties of a cell
+  /*
    void refreshMaterialPropertyArrays() {
     Part p = null;
     int count = parts.size();
@@ -1050,8 +1118,9 @@ class Model2D {
   }
   */
 
+  
   /** get the total thermal energy of the system */
-   double getThermalEnergy() {
+  double getThermalEnergy() {
     double energy = 0.0;
     for (int i = 1; i < nx - 1; i++) { // excluding the border cells to ensure the conservation of energy
       for (int j = 1; j < ny - 1; j++) {
@@ -1061,6 +1130,7 @@ class Model2D {
     return energy * deltaX * deltaY;
   }
 
+  
   /** get the total thermal energy stored in this part */
 
    /*
@@ -1081,88 +1151,19 @@ class Model2D {
     return energy * deltaX * deltaY;
   }
 
+  
   /** get the thermal energy stored in the cell at the given point. If the point is out of bound, return -1
    * (any impossible value to indicate error) */
   double getThermalEnergyAt(double x, double y) {
     int i = Math.round(x / deltaX);
-    if (i < 0 || i >= nx)
-      return -1;
+    if (i < 0 || i >= nx) return -1;
     int j = Math.round(y / deltaY);
-    if (j < 0 || j >= ny)
-      return -1;
+    if (j < 0 || j >= ny) return -1;
     return t[i][j] * density[i][j] * specificHeat[i][j] * deltaX * deltaY;
   }
 
-  void init() {
-    for (int i = 0; i < nx; i++) {
-      Arrays.fill(conductivity[i], backgroundConductivity);
-      Arrays.fill(specificHeat[i], backgroundSpecificHeat);
-      Arrays.fill(density[i], backgroundDensity);
-    }
-    setInitialTemperature();
-  }
-
-  void clear() {
-    parts.clear();
-    photons.clear();
-    anemometers.clear();
-    thermometers.clear();
-    heatFluxSensors.clear();
-    thermostats.clear();
-    clouds.clear();
-    trees.clear();
-    maximumHeatCapacity = -1;
-  }
-
-
-  private void setInitialVelocity() {
-    for (int i = 0; i < nx; i++) {
-      for (int j = 0; j < ny; j++) {
-        if (fluidity[i][j]) {
-          u[i][j] = v[i][j] = 0;
-        } else {
-          u[i][j] = uWind[i][j];
-          v[i][j] = vWind[i][j];
-        }
-      }
-    }
-  }
-
-  public void setInitialTemperature() {
-    if (parts == null || parts.isEmpty()) {
-      for (int i = 0; i < nx; i++) {
-        for (int j = 0; j < ny; j++) {
-          t[i][j] = backgroundTemperature;
-        }
-      }
-    } else {
-      float x, y;
-      int count;
-      for (int i = 0; i < nx; i++) {
-        x = i * deltaX;
-        for (int j = 0; j < ny; j++) {
-          y = j * deltaY;
-          count = 0;
-          t[i][j] = 0;
-          synchronized (parts) {
-            for (Part p : parts) { // a cell gets the average temperature from the overlapping parts
-              if (p.getShape().contains(x, y)) {
-                count++;
-                t[i][j] += p.getTemperature();
-              }
-            }
-          }
-          if (count > 0) {
-            t[i][j] /= count;
-          } else {
-            t[i][j] = backgroundTemperature;
-          }
-        }
-      }
-    }
-    clearSensorData();
-  }
-
+  
+  /*
   public void run() {
     checkPartPower();
     checkPartRadiation();
@@ -1189,7 +1190,7 @@ class Model2D {
     }
   }
 
- bool fatalErrorOccurred() {
+  bool fatalErrorOccurred() {
     return int.isNaN(t[nx / 2][ny / 2]);
   }
 
@@ -1249,7 +1250,9 @@ class Model2D {
       }
     }
   }
+  */
 
+  
   private void nextStep() {
     if (radiative) {
       if (indexOfStep % photonEmissionInterval == 0) {
@@ -1271,7 +1274,8 @@ class Model2D {
     }
     indexOfStep++;
   }
-  */
+
+  
   double getTime() {
     return indexOfStep * heatSolver.getTimeStep();
   }
@@ -1287,33 +1291,33 @@ class Model2D {
     fluidSolver.setTimeStep(timeStep);
   }
 */
+  
   double getTimeStep() {
     return heatSolver.getTimeStep();
   }
 
-  void setTemperature(Matrix<double> t) {
-    this.t = t;
-  }
-/*
+
   double getTemperatureAt(double x, double y) {
-    int i = Math.min(t.length - 1, Math.round(x / deltaX));
-    if (i < 0)
-      i = 0;
-    int j = Math.min(t[0].length - 1, Math.round(y / deltaY));
-    if (j < 0)
-      j = 0;
+    int i = min(t.length - 1, round(x / deltaX));
+    if (i < 0) i = 0;
+    int j = min(t[0].length - 1, round(y / deltaY));
+    if (j < 0) j = 0;
     return t[i][j];
   }
 
+  /*
   public float getTemperature(int i, int j, byte stencil) {
-    if (i < 0)
+    if (i < 0) {
       i = 0;
-    else if (i > nx - 1)
+    } else if (i > nx - 1) {
       i = nx - 1;
-    if (j < 0)
+    }
+    
+    if (j < 0) {
       j = 0;
-    else if (j > ny - 1)
+    } else if (j > ny - 1) {
       j = ny - 1;
+    }
     switch (stencil) {
     case Sensor.ONE_POINT:
       return t[i][j];
@@ -1377,6 +1381,7 @@ class Model2D {
       return t[i][j];
     }
   }
+  
 
   public void setTemperatureAt(float x, float y, float temperature) {
     int i = Math.min(t.length - 1, Math.round(x / deltaX));
@@ -1510,6 +1515,8 @@ class Model2D {
     return getVorticity(Math.round(x / deltaX), Math.round(y / deltaY));
   }
 */
+  
+  
   double getVorticity(int i, int j) {
     if (i < 1)
       i = 1;
@@ -1525,6 +1532,7 @@ class Model2D {
     double dv_dx = (v[i + 1][j] - v[i - 1][j]) / deltaX;
     return 0.5 * (du_dy - dv_dx);
   }
+  
 /*
   double getVorticity(int i, int j, int stencil) {
     switch (stencil) {
@@ -1551,21 +1559,11 @@ class Model2D {
     }
   }
 */
+
   Matrix<double> getStreamFunction() {
     return fluidSolver.getStreamFunction(u, v);
   }
 
-  Matrix<double> getSpecificHeat() {
-    return specificHeat;
-  }
-
-  Matrix<double> getDensity() {
-    return density;
-  }
-
-  Matrix<double> getConductivity() {
-    return conductivity;
-  }
   /*
   bool hasSensor() {
     return !thermometers.isEmpty() || !heatFluxSensors.isEmpty() || !anemometers.isEmpty();
@@ -1661,4 +1659,4 @@ class Model2D {
 
 }
 */
- }
+}
