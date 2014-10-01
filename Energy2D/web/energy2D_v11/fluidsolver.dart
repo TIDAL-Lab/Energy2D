@@ -12,7 +12,7 @@ part of Energy2D;
  class FluidSolver2D {
 
   // five relaxation steps are probably enough for most transient problems because there are numerous previous steps that can be considered as pre-relaxation steps, especially when changes are slow or small.
-  int relaxationSteps = 5;
+  int relaxationSteps = 5; //5
 
   // 10 * Constants.AIR_VISCOSITY;
   double viscosity = 10 * 0.00001568;
@@ -20,9 +20,10 @@ part of Energy2D;
   double gravity = 0.0;
   int buoyancyApproximation = Model2D.BUOYANCY_AVERAGE_ALL;
   int gravityType = Model2D.GRAVITY_UNIFORM;
-  double timeStep =  1.0; //0.1;
+  double timeStep =  0.2; //0.1;
 
   int nx, ny, nx1, ny1, nx2, ny2;
+  double lx = 4.0, ly = 3.0;
   double deltaX, deltaY;
   double i2dx, i2dy;
   double idxsq, idysq;
@@ -132,8 +133,8 @@ part of Energy2D;
     this.deltaY = deltaY;
     i2dx = 0.5 / deltaX;
     i2dy = 0.5 / deltaY;
-    idxsq = 1 / (deltaX * deltaX);
-    idysq = 1 / (deltaY * deltaY);
+    idxsq = 1 / (deltaX * deltaX); // deltaX = lx / nx;
+    idysq = 1 / (deltaY * deltaY); // deltaY = ly / ny;
   }
 
 
@@ -151,11 +152,11 @@ part of Energy2D;
     int count = 0;
     double uw, vw;
 
- /*   for (int i = 1; i < nx1; i++) {
+ /*  for (int i = 1; i < nx1; i++) {
       for (int j = 1; j < ny1; j++) {
         if (!fluidity[i][j]) {
-          uw = uWind[i][j];
-          vw = vWind[i][j];
+          uw = 0.0; //uWind[i][j];
+          vw = 0.0; //vWind[i][j];
           count = 0;
           if (fluidity[i - 1][j]) {
             count++;
@@ -209,7 +210,7 @@ part of Energy2D;
   double getMeanTemperature(int i, int j) {
     int lowerBound = 0;
     // search for the upper bound
-    for (int k = j - 1; k > 0; k--) {
+    for (int k = j-1 ; k > 0; k--) { //j-1
       if (!fluidity[i][k]) {
         lowerBound = k;
         break;
@@ -217,7 +218,7 @@ part of Energy2D;
     }
 
     int upperBound = ny;
-    for (int k = j + 1; k < ny; k++) {
+    for (int k = j+1; k < ny; k++) { //j+1
       if (!fluidity[i][k]) {
         upperBound = k;
         break;
@@ -244,8 +245,8 @@ part of Energy2D;
 
     case Model2D.BUOYANCY_AVERAGE_ALL:
       t0 = MathUtil.getAverage(t);
-      for (int i = 1; i < nx1; i++) {
-        for (int j = 1; j < ny1; j++) {
+      for (int i = 1; i < nx1; i++) { //nx1
+        for (int j = 1; j < ny1; j++) { //ny1
           if (fluidity[i][j]) {
             f[i][j] += (g - b) * t[i][j]  + b * t0;
           }
@@ -255,7 +256,7 @@ part of Energy2D;
 
     case Model2D.BUOYANCY_AVERAGE_COLUMN:
 
-  /*    for (int i = 1; i < nx1; i++) {
+      for (int i = 1; i < nx1; i++) {
         for (int j = 1; j < ny1; j++) {
           if (fluidity[i][j]) {
             t0 = getMeanTemperature(i, j);
@@ -263,49 +264,47 @@ part of Energy2D;
           }
         }
       }
-      break; */
+      break;
     }
   }
 
-
   void diffuse(int b, Matrix<double> f0, Matrix<double> f) {
 
-      // Copying a two-dimensional array is very fast: it takes less than 1% compared with the time for the relaxation solver below. Considering this, I chose clarity instead of swapping the arrays.
-    f0.copyFrom(f);
+        // Copying a two-dimensional array is very fast: it takes less than 1% compared with the time for the relaxation solver below. Considering this, I chose clarity instead of swapping the arrays.
+      f0.copyFrom(f);
 
-/* Charles' code
- *
- *  double hx = timeStep * viscosity * idxsq;
-    double hy = timeStep * viscosity * idysq;
-    double dn = 1.0 / (1 + 2 * (hx + hy));
+   //Charles' code
 
-    for (int k = 0; k < relaxationSteps; k++) {
-      for (int i = 1; i < nx1; i++) {
-        for (int j = 1; j < ny1; j++) {
-          if (fluidity[i][j]) {
-            f[i][j] = (f0[i][j] + hx * (f[i - 1][j] + f[i + 1][j]) + hy * (f[i][j - 1] + f[i][j + 1])) * dn;
-          }
-        }
-      }
-      applyBoundary(b, f);
-    }
-  } */
-
-  double hx = timeStep * viscosity * nx1 * ny1;
-    //  double hy = timeStep * viscosity * ny1 * ny1;
-    //  double dn = 1.0 / (1 + 2 * (hx + hy));
+      double hx = timeStep * viscosity * idxsq;
+      double hy = timeStep * viscosity * idysq;
+      double dn = 1.0 / (1 + 2 * (hx + hy));
 
       for (int k = 0; k < relaxationSteps; k++) {
         for (int i = 1; i < nx1; i++) {
           for (int j = 1; j < ny1; j++) {
             if (fluidity[i][j]) {
-              f[i][j] = (f0[i][j] + hx * (f[i - 1][j] + f[i + 1][j] + f[i][j - 1] + f[i][j + 1])) / (1 + 4 * hx);
+              f[i][j] = (f0[i][j] + hx * (f[i - 1][j] + f[i + 1][j]) + hy * (f[i][j - 1] + f[i][j + 1])) * dn;
             }
           }
         }
         applyBoundary(b, f);
       }
     }
+
+    /*    double h = timeStep * viscosity * nx1 * ny1;
+
+        for (int k = 0; k < relaxationSteps; k++) {
+          for (int i = 1; i < nx1; i++) {
+            for (int j = 1; j < ny1; j++) {
+              if (fluidity[i][j]) {
+                f[i][j] = (f0[i][j] + h * (f[i - 1][j] + f[i + 1][j] + f[i][j - 1] + f[i][j + 1])) / (1 + 4 * h);
+              }
+            }
+          }
+          applyBoundary(b, f);
+        }
+      } */
+
 
   void advect(int b, Matrix<double> f0, Matrix<double> f) {
     macCormack(b, f0, f);
@@ -318,17 +317,18 @@ part of Energy2D;
 
     for (int i = 1; i < nx1; i++) {
       for (int j = 1; j < ny1; j++) {
-        if (fluidity[i][j]) {
-          f[i][j] = f0[i][j] - tx * (u0[i + 1][j] * f0[i + 1][j] - u0[i - 1][j] * f0[i - 1][j]) - ty * (v0[i][j + 1] * f0[i][j + 1] - v0[i][j - 1] * f0[i][j - 1]);
-        }
-      }
-    }
-    applyBoundary(b, f);
+              if (fluidity[i][j]) {
+                f[i][j] = f0[i][j] - tx * (u0[i + 1][j] * f0[i + 1][j] - u0[i - 1][j] * f0[i - 1][j]) - ty * (v0[i][j + 1] * f0[i][j + 1] - v0[i][j - 1] * f0[i][j - 1]);
+              }
+            }
+          }
 
-    for (int i = 1; i < nx1; i++) {
-      for (int j = 1; j < ny1; j++) {
-        if (fluidity[i][j]) {
-          f0[i][j] = 0.5 * (f0[i][j] + f[i][j]) - 0.5 * tx * u0[i][j] * (f[i + 1][j] - f[i - 1][j]) - 0.5 * ty * v0[i][j] * (f[i][j + 1] - f[i][j - 1]);
+          applyBoundary(b, f);
+
+          for (int i = 1; i < nx1; i++) {
+            for (int j = 1; j < ny1; j++) {
+              if (fluidity[i][j]) {
+                f0[i][j] = 0.5 * (f0[i][j] + f[i][j]) - 0.5 * tx * u0[i][j] * (f[i + 1][j] - f[i - 1][j]) - 0.5 * ty * v0[i][j] * (f[i][j + 1] - f[i][j - 1]);
         }
       }
     }
@@ -340,13 +340,10 @@ part of Energy2D;
 
 	void solve(Matrix<double> u, Matrix<double> v) {
     if (thermalBuoyancy != 0) {
-      switch (gravityType) {
+      switch (gravityType){
         case Model2D.GRAVITY_UNIFORM:
           applyBuoyancy(v);
           break;
-      //  case Model2D.GRAVITY_CENTRIC:
-      //    applySphericalBuoyancy(u, v);
-      //    break;
       }
     }
     setObstacleVelocity(u, v);
@@ -458,20 +455,64 @@ part of Energy2D;
     setObstacleBoundary(vorticity);
   }
 
-  /* b=1 horizontal; b=2 vertical */
-  void applyBoundary(int direction, Matrix<double> f) {
+  // b=1 horizontal; b=2 vertical
+
+/*  void applyBoundary(int direction, Matrix<double> f) {
+
+      bool horizontal = direction == 1;
+      bool vertical = direction == 2;
+      for (int i = 11; i < 49; i++) {
+        // upper side; value of 0 denotes refelective surface
+        if (vertical && boundary.upper == 0) {
+          f[i][10] = -f[i][11];
+        } else {
+          f[i][10] = f[i][11];
+        }
+        // lower side; value of 0 denotes refelective surface
+        if (vertical && boundary.lower == 0) {
+          f[i][49] = -f[i][48];
+        } else {
+          f[i][49] = f[i][48];
+        }
+      }
+      for (int j = 11; j < 49; j++) {
+        // left side; value of 0 denotes refelective surface
+        if (horizontal && boundary.left == 0) {
+          f[10][j] = -f[11][j];
+        } else {
+          f[10][j] = f[11][j];
+        }
+        // right side; value of 0 denotes refelective surface
+        if (horizontal && boundary.right == 0) {
+          f[49][j] = -f[48][j];
+        } else {
+          f[49][j] = f[48][j];
+        }
+      }
+      // upper-left corner
+      f[10][10] = 0.5 * (f[10][10] + f[10][11]);
+      // upper-right corner
+      f[49][10] = 0.5 * (f[48][10] + f[49][11]);
+      // lower-left corner
+      f[10][49] = 0.5 * (f[11][49] + f[10][48]);
+      // lower-right corner
+      f[49][49] = 0.5 * (f[48][49] + f[49][48]);
+    }
+  } */
+
+ void applyBoundary(int direction, Matrix<double> f) {
 
     bool horizontal = direction == 1;
     bool vertical = direction == 2;
     for (int i = 1; i < nx1; i++) {
       // upper side; value of 0 denotes refelective surface
-      if (vertical && boundary.upper == MassBoundary.REFLECTIVE) {
+      if (vertical && boundary.upper == 0) {
         f[i][0] = -f[i][1];
       } else {
         f[i][0] = f[i][1];
       }
       // lower side; value of 0 denotes refelective surface
-      if (vertical && boundary.lower == MassBoundary.REFLECTIVE) {
+      if (vertical && boundary.lower == 0) {
         f[i][ny1] = -f[i][ny2];
       } else {
         f[i][ny1] = f[i][ny2];
@@ -479,20 +520,20 @@ part of Energy2D;
     }
     for (int j = 1; j < ny1; j++) {
       // left side; value of 0 denotes refelective surface
-      if (horizontal && boundary.left == MassBoundary.REFLECTIVE) {
+      if (horizontal && boundary.left == 0) {
         f[0][j] = -f[1][j];
       } else {
         f[0][j] = f[1][j];
       }
       // right side; value of 0 denotes refelective surface
-      if (horizontal && boundary.right == MassBoundary.REFLECTIVE) {
+      if (horizontal && boundary.right == 0) {
         f[nx1][j] = -f[nx2][j];
       } else {
         f[nx1][j] = f[nx2][j];
       }
     }
     // upper-left corner
-    f[0][0] = 0.5 * (f[1][0] + f[0][1]);
+    f[0][0] = 0.5 * (f[0][0] + f[0][1]);
     // upper-right corner
     f[nx1][0] = 0.5 * (f[nx2][0] + f[nx1][1]);
     // lower-left corner
