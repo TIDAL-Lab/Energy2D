@@ -1,0 +1,6 @@
+name: energy2D_dart
+version: 6.1.0
+author: Charles Xie<qxie@concord.org>
+description: A sample web application
+dependencies:
+  browser: any
