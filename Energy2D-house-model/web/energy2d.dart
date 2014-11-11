@@ -59,7 +59,7 @@ void draw2() {
   ctx2.fillRect(161, 183, 19, 140);
 
 // power status of thermostat
-/*  for (int i = 35; i < 45; i++) {
+  for (int i = 35; i < 45; i++) {
     for (int j = ny - 7; j < ny - 4; j++) {
       if (q[i][j] > 0.0) {
 
@@ -78,7 +78,7 @@ void draw2() {
 
         }
     }
-  } */
+  }
 
 // Temp display
   ctx2.beginPath();
